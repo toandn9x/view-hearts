@@ -317,7 +317,7 @@ class MAIN:
 [bold red]\/_/  /__  \ \  __\   \ \  __\ \ \ \/\ \  \ \____ \  
 [bold white]  /\_____\  \ \_____\  \ \_\    \ \_____\  \/\_____\ 
 [bold white]  \/_____/   \/_____/   \/_/     \/_____/   \/_____/
-        [underline green]Free Tiktok Views & Hearts - Coded by Rozhak""", width=56, style="bold bright_white"))
+        [underline green]Free Tiktok Views & Hearts - Coded by Toand + Grok3 AI""", width=56, style="bold bright_white"))
         return True
 
 if __name__ == '__main__':
@@ -325,7 +325,7 @@ if __name__ == '__main__':
         os.system('git pull')
         subscribe_file = "Penyimpanan/Subscribe.json"
         if not os.path.exists(subscribe_file):
-            youtube_url = requests.get('https://raw.githubusercontent.com/RozhakXD/Zefoy/main/Penyimpanan/Youtube.json').json()['Link']
+            youtube_url = "https://www.youtube.com/watch?v=itgFI-z9ohQ"
             os.system(f'xdg-open {youtube_url}')
             with open(subscribe_file, 'w') as w:
                 json.dump({"Status": True}, w, indent=4)
