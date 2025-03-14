@@ -1,0 +1,6 @@
+cài git, python
+cài biến path tesseract môi trường
+
+git clone
+cd project
+pip install -r requirements.txt
