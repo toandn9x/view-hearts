@@ -1,5 +1,5 @@
 try:
-    import requests, re, random, string, base64, urllib.parse, json, time, os, sys
+    import requests, re, random, string, base64, urllib.parse, json, time, os, sys, threading
     from requests_toolbelt import MultipartEncoder
     from rich import print as printf
     from PIL import Image
@@ -11,6 +11,7 @@ except (ModuleNotFoundError) as e:
     __import__('sys').exit(f"Error: {str(e).capitalize()}!")
 
 COOKIES, SUKSES, LOGOUT, GAGAL = {"Cookie": None}, [], [], []
+LOCK = threading.Lock()  # Lock để đồng bộ truy cập biến toàn cục
 
 class DIPERLUKAN:
     def __init__(self) -> None:
@@ -53,7 +54,8 @@ class DIPERLUKAN:
                 data = {self.form: self.BYPASS_CAPTCHA()}
                 response3 = session.post('https://zefoy.com/', data=data).text
                 if 'placeholder="Enter Video URL"' in str(response3):
-                    COOKIES.update({"Cookie": "; ".join([str(x)+"="+str(y) for x,y in session.cookies.get_dict().items()])})
+                    with LOCK:
+                        COOKIES.update({"Cookie": "; ".join([str(x)+"="+str(y) for x,y in session.cookies.get_dict().items()])})
                     printf(f"[bold bright_white]   ──>[bold green] LOGIN SUCCESSFUL!                ", end='\r')
                     time.sleep(2.5)
                     return COOKIES['Cookie']
@@ -91,14 +93,15 @@ class DIPERLUKAN:
                     self.MENGIRIMKAN_TAMPILAN(self.video_form, self.post_action, video_url, action_type)
                 elif action_type == "hearts":
                     self.video_form = re.search(r'name="(.*?)" placeholder="Enter Video URL"', str(response)).group(1)
-                    self.post_action = re.findall(r'action="(.*?)">', str(response))[1]  # Index 1 cho hearts (giả định, cần kiểm tra)
+                    self.post_action = re.findall(r'action="(.*?)">', str(response))[1]  # Index 1 cho hearts (giả định)
                     printf(f"[bold bright_white]   ──>[bold green] SUCCESSFULLY FOUND HEARTS FORM!   ", end='\r')
                     time.sleep(1.5)
                     self.MENGIRIMKAN_TAMPILAN(self.video_form, self.post_action, video_url, action_type)
             else:
                 printf(f"[bold bright_white]   ──>[bold red] FORM NOT FOUND!        ", end='\r')
                 time.sleep(3.5)
-                COOKIES.update({"Cookie": None})
+                with LOCK:
+                    COOKIES.update({"Cookie": None})
                 return False
 
     def MENGIRIMKAN_TAMPILAN(self, video_form, post_action, video_url, action_type="views"):
@@ -141,7 +144,8 @@ class DIPERLUKAN:
 
                 if action_type == "views":
                     if 'Successfully 1000 views sent.' in str(self.base64_string2):
-                        SUKSES.append(f"{self.base64_string2}")
+                        with LOCK:
+                            SUKSES.append(f"{self.base64_string2}")
                         printf(Panel(f"""[bold white]Status :[bold green] Successfully...
 [bold white]Link :[bold red] {video_url}
 [bold white]Views :[bold yellow] +1000""", width=56, style="bold bright_white", title="[bold bright_white][ Sukses ]"))
@@ -150,7 +154,8 @@ class DIPERLUKAN:
                         self.MENGIRIMKAN_TAMPILAN(video_form, post_action, video_url, action_type)
                     elif 'Successfully ' in str(self.base64_string2) and ' views sent.' in str(self.base64_string2):
                         self.views_sent = re.search(r'Successfully (.*?) views sent.', str(self.base64_string2)).group(1)
-                        SUKSES.append(f"{self.base64_string2}")
+                        with LOCK:
+                            SUKSES.append(f"{self.base64_string2}")
                         printf(Panel(f"""[bold white]Status :[bold yellow] Successfully...
 [bold white]Link :[bold red] {video_url}
 [bold white]Views :[bold green] +{self.views_sent}""", width=56, style="bold bright_white", title="[bold bright_white][ Sukses ]"))
@@ -158,14 +163,17 @@ class DIPERLUKAN:
                         time.sleep(2.5)
                         self.MENGIRIMKAN_TAMPILAN(video_form, post_action, video_url, action_type)
                     else:
-                        GAGAL.append(f"{self.base64_string2}")
+                        with LOCK:
+                            GAGAL.append(f"{self.base64_string2}")
                         printf(f"[bold bright_white]   ──>[bold red] FAILED TO SEND VIEWS!           ", end='\r')
                         time.sleep(3.5)
-                        COOKIES.update({"Cookie": None})
+                        with LOCK:
+                            COOKIES.update({"Cookie": None})
                         return False
                 elif action_type == "hearts":
-                    if '10+ Hearts successfully sent.' in str(self.base64_string2):  # Response xác nhận cho hearts
-                        SUKSES.append(f"{self.base64_string2}")
+                    if '10+ Hearts successfully sent.' in str(self.base64_string2):
+                        with LOCK:
+                            SUKSES.append(f"{self.base64_string2}")
                         printf(Panel(f"""[bold white]Status :[bold green] Successfully...
 [bold white]Link :[bold red] {video_url}
 [bold white]Hearts :[bold yellow] +10""", width=56, style="bold bright_white", title="[bold bright_white][ Sukses ]"))
@@ -173,10 +181,12 @@ class DIPERLUKAN:
                         time.sleep(2.5)
                         self.MENGIRIMKAN_TAMPILAN(video_form, post_action, video_url, action_type)
                     else:
-                        GAGAL.append(f"{self.base64_string2}")
+                        with LOCK:
+                            GAGAL.append(f"{self.base64_string2}")
                         printf(f"[bold bright_white]   ──>[bold red] FAILED TO SEND HEARTS!           ", end='\r')
                         time.sleep(3.5)
-                        COOKIES.update({"Cookie": None})
+                        with LOCK:
+                            COOKIES.update({"Cookie": None})
                         return False
             elif 'Checking Timer...' in str(self.base64_string):
                 printf(f"[bold bright_white]   ──>[bold green] WAIT FOR 4 MINUTES!          ", end='\r')
@@ -214,7 +224,8 @@ class DIPERLUKAN:
             else:
                 printf(f"[bold bright_white]   ──>[bold red] FAILED TO GET {action_type.upper()} FORM!     ", end='\r')
                 time.sleep(3.5)
-                COOKIES.update({"Cookie": None})
+                with LOCK:
+                    COOKIES.update({"Cookie": None})
                 return False
 
     def ANTI_LOGOUT(self):
@@ -269,45 +280,77 @@ class MAIN:
     def __init__(self):
         try:
             self.TAMPILKAN_LOGO()
-            printf(Panel(f"[bold white]Please select an option:\n[bold green]1. Views\n[bold yellow]2. Hearts", width=56, style="bold bright_white", title="[bold bright_white][ Options ]"))
+            printf(Panel(f"[bold white]Please select an option:\n[bold green]1. Views\n[bold yellow]2. Hearts\n[bold cyan]3. Views & Hearts (Parallel)", width=56, style="bold bright_white", title="[bold bright_white][ Options ]"))
             option = Console().input("[bold bright_white]   ╰─> ")
             printf(Panel(f"[bold white]Please fill in your TikTok video link...", width=56, style="bold bright_white", title="[bold bright_white][ Link Video ]"))
             video_url = Console().input("[bold bright_white]   ╰─> ")
             if 'tiktok.com' in str(video_url) or '/video/' in str(video_url):
                 printf(Panel(f"[bold white]You can use[bold green] CTRL + C[bold white] if stuck...", width=56, style="bold bright_white", title="[bold bright_white][ Catatan ]"))
-                while True:
-                    try:
-                        if COOKIES['Cookie'] is None or len(COOKIES['Cookie']) == 0:
-                            DIPERLUKAN().LOGIN()
-                        else:
-                            if option == "1":
-                                printf(f"[bold bright_white]   ──>[bold green] SENDING VIEWS!     ", end='\r')
-                                time.sleep(2.5)
-                                DIPERLUKAN().MENDAPATKAN_FORMULIR(video_url, "views")
-                            elif option == "2":
-                                printf(f"[bold bright_white]   ──>[bold green] SENDING HEARTS!     ", end='\r')
-                                time.sleep(2.5)
-                                DIPERLUKAN().MENDAPATKAN_FORMULIR(video_url, "hearts")
+                if option == "3":
+                    # Chạy song song bằng 2 luồng
+                    views_thread = threading.Thread(target=self.run_action, args=(video_url, "views"))
+                    hearts_thread = threading.Thread(target=self.run_action, args=(video_url, "hearts"))
+                    views_thread.start()
+                    hearts_thread.start()
+                    views_thread.join()
+                    hearts_thread.join()
+                else:
+                    while True:
+                        try:
+                            if COOKIES['Cookie'] is None or len(COOKIES['Cookie']) == 0:
+                                DIPERLUKAN().LOGIN()
                             else:
-                                printf(Panel(f"[bold red]Invalid option! Please choose 1 or 2.", width=56, style="bold bright_white", title="[bold bright_white][ Error ]"))
-                                sys.exit()
-                    except (AttributeError, IndexError):
-                        printf(f"[bold bright_white]   ──>[bold red] ERROR OCCURRED IN INDEX FORM!            ", end='\r')
-                        time.sleep(7.5)
-                        continue
-                    except (RequestException):
-                        printf(f"[bold bright_white]   ──>[bold red] YOUR CONNECTION IS HAVING A PROBLEM!     ", end='\r')
-                        time.sleep(7.5)
-                        continue
-                    except (KeyboardInterrupt):
-                        printf(f"\r                                 ", end='\r')
-                        time.sleep(2.5)
+                                if option == "1":
+                                    printf(f"[bold bright_white]   ──>[bold green] SENDING VIEWS!     ", end='\r')
+                                    time.sleep(2.5)
+                                    DIPERLUKAN().MENDAPATKAN_FORMULIR(video_url, "views")
+                                elif option == "2":
+                                    printf(f"[bold bright_white]   ──>[bold green] SENDING HEARTS!     ", end='\r')
+                                    time.sleep(2.5)
+                                    DIPERLUKAN().MENDAPATKAN_FORMULIR(video_url, "hearts")
+                                else:
+                                    printf(Panel(f"[bold red]Invalid option! Please choose 1, 2, or 3.", width=56, style="bold bright_white", title="[bold bright_white][ Error ]"))
+                                    sys.exit()
+                        except (AttributeError, IndexError):
+                            printf(f"[bold bright_white]   ──>[bold red] ERROR OCCURRED IN INDEX FORM!            ", end='\r')
+                            time.sleep(7.5)
+                            continue
+                        except (RequestException):
+                            printf(f"[bold bright_white]   ──>[bold red] YOUR CONNECTION IS HAVING A PROBLEM!     ", end='\r')
+                            time.sleep(7.5)
+                            continue
+                        except (KeyboardInterrupt):
+                            printf(f"\r                                 ", end='\r')
+                            time.sleep(2.5)
+                            break
             else:
                 printf(Panel(f"[bold red]Please fill in the TikTok video link correctly...", width=56, style="bold bright_white", title="[bold bright_white][ Link Salah ]"))
                 sys.exit()
         except (Exception) as e:
             printf(Panel(f"[bold red]{str(e).capitalize()}!", width=56, style="bold bright_white", title="[bold bright_white][ Error ]"))
             sys.exit()
+
+    def run_action(self, video_url, action_type):
+        while True:
+            try:
+                if COOKIES['Cookie'] is None or len(COOKIES['Cookie']) == 0:
+                    DIPERLUKAN().LOGIN()
+                else:
+                    printf(f"[bold bright_white]   ──>[bold green] SENDING {action_type.upper()}!     ", end='\r')
+                    time.sleep(2.5)
+                    DIPERLUKAN().MENDAPATKAN_FORMULIR(video_url, action_type)
+            except (AttributeError, IndexError):
+                printf(f"[bold bright_white]   ──>[bold red] ERROR OCCURRED IN INDEX FORM ({action_type})!            ", end='\r')
+                time.sleep(7.5)
+                continue
+            except (RequestException):
+                printf(f"[bold bright_white]   ──>[bold red] CONNECTION PROBLEM ({action_type})!     ", end='\r')
+                time.sleep(7.5)
+                continue
+            except (KeyboardInterrupt):
+                printf(f"\r                                 ", end='\r')
+                time.sleep(2.5)
+                break
 
     def TAMPILKAN_LOGO(self):
         os.system('cls' if os.name == 'nt' else 'clear')
@@ -317,7 +360,7 @@ class MAIN:
 [bold red]\/_/  /__  \ \  __\   \ \  __\ \ \ \/\ \  \ \____ \  
 [bold white]  /\_____\  \ \_____\  \ \_\    \ \_____\  \/\_____\ 
 [bold white]  \/_____/   \/_____/   \/_/     \/_____/   \/_____/
-        [underline green]Free Tiktok Views & Hearts - Coded by Toand + Grok3 AI""", width=56, style="bold bright_white"))
+        [underline green]Free Tiktok Views & Hearts - Coded by Toandn + Grok3 AI""", width=56, style="bold bright_white"))
         return True
 
 if __name__ == '__main__':
