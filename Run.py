@@ -1,36 +1,17 @@
-import requests, re, random, string, base64, urllib.parse, json, time, os, sys, threading
-from requests_toolbelt import MultipartEncoder
-from rich import print as printf
-from PIL import Image
-import pytesseract
-from rich.panel import Panel
-from rich.console import Console
-from requests.exceptions import RequestException
+try:
+    import requests, re, random, string, base64, urllib.parse, json, time, os, sys, threading
+    from requests_toolbelt import MultipartEncoder
+    from rich import print as printf
+    from PIL import Image
+    import pytesseract
+    from rich.panel import Panel
+    from rich.console import Console
+    from requests.exceptions import RequestException
+except (ModuleNotFoundError) as e:
+    __import__('sys').exit(f"Error: {str(e).capitalize()}!")
 
 COOKIES, SUKSES, LOGOUT, GAGAL = {"Cookie": None}, [], [], []
 LOCK = threading.Lock()  # Lock để đồng bộ truy cập biến toàn cục
-
-# Danh sách User-Agent ngẫu nhiên
-USER_AGENTS = [
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/119.0",
-    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
-]
-
-# Danh sách Proxy (thay bằng proxy thực tế nếu có)
-PROXIES = [
-    # {"http": "http://proxy1:port", "https": "http://proxy1:port"},
-    # {"http": "http://proxy2:port", "https": "http://proxy2:port"},
-    # Thêm proxy nếu cần
-]
-
-def get_random_user_agent():
-    return random.choice(USER_AGENTS)
-
-def get_random_proxy():
-    return random.choice(PROXIES) if PROXIES else None
 
 class DIPERLUKAN:
     def __init__(self) -> None:
@@ -44,12 +25,11 @@ class DIPERLUKAN:
                 'Sec-Fetch-Mode': 'navigate',
                 'Sec-Fetch-Site': 'none',
                 'Host': 'zefoy.com',
-                'User-Agent': get_random_user_agent(),
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
                 'Sec-Fetch-User': '?1',
                 'Sec-Fetch-Dest': 'document'
             })
-            proxies = get_random_proxy()
-            response = session.get('https://zefoy.com/', proxies=proxies).text
+            response = session.get('https://zefoy.com/').text
             if 'Sorry, you have been blocked' in str(response) or 'Just a moment...' in str(response):
                 printf(Panel(f"[bold red]Zefoy server is currently affected by cloudflare...", width=56, style="bold bright_white", title="[bold bright_white][ Cloudflare ]"))
                 sys.exit()
@@ -60,7 +40,7 @@ class DIPERLUKAN:
                     'Cookie': "; ".join([str(x) + "=" + str(y) for x, y in session.cookies.get_dict().items()]),
                     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7'
                 })
-                response2 = session.get('https://zefoy.com{}'.format(self.captcha_image), proxies=proxies)
+                response2 = session.get('https://zefoy.com{}'.format(self.captcha_image))
                 with open('Penyimpanan/Gambar.png', 'wb') as w:
                     w.write(response2.content)
                 w.close()
@@ -72,7 +52,7 @@ class DIPERLUKAN:
                     'Cookie': "; ".join([str(x) + "=" + str(y) for x, y in session.cookies.get_dict().items()])
                 })
                 data = {self.form: self.BYPASS_CAPTCHA()}
-                response3 = session.post('https://zefoy.com/', data=data, proxies=proxies).text
+                response3 = session.post('https://zefoy.com/', data=data).text
                 if 'placeholder="Enter Video URL"' in str(response3):
                     with LOCK:
                         COOKIES.update({"Cookie": "; ".join([str(x)+"="+str(y) for x,y in session.cookies.get_dict().items()])})
@@ -96,15 +76,14 @@ class DIPERLUKAN:
                 'Accept-Language': 'en-US,en;q=0.9',
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
                 'Host': 'zefoy.com',
-                'Cookie': f'{COOKIES["Cookie"]}; window_size=1280x551; user_agent={urllib.parse.quote(get_random_user_agent())}; language=en-US; languages=en-US; cf-locale=en-US;',
+                'Cookie': f'{COOKIES["Cookie"]}; window_size=1280x551; user_agent=Mozilla%2F5.0%20(Windows%20NT%2010.0%3B%20Win64%3B%20x64)%20AppleWebKit%2F537.36%20(KHTML%2C%20like%20Gecko)%20Chrome%2F131.0.0.0%20Safari%2F537.36; language=en-US; languages=en-US; cf-locale=en-US;',
                 'Sec-Fetch-Site': 'none',
-                'User-Agent': get_random_user_agent(),
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
                 'Sec-Fetch-Mode': 'navigate',
                 'Sec-Fetch-User': '?1',
                 'Sec-Fetch-Dest': 'document',
             })
-            proxies = get_random_proxy()
-            response = session.get('https://zefoy.com/', proxies=proxies).text
+            response = session.get('https://zefoy.com/').text
             if 'placeholder="Enter Video URL"' in str(response):
                 if action_type == "views":
                     self.video_form = re.search(r'name="(.*?)" placeholder="Enter Video URL"', str(response)).group(1)
@@ -130,8 +109,8 @@ class DIPERLUKAN:
         with requests.Session() as session:
             boundary = '----WebKitFormBoundary' + ''.join(random.sample(string.ascii_letters + string.digits, 16))
             session.headers.update({
-                'User-Agent': get_random_user_agent(),
-                'Cookie': f'{COOKIES["Cookie"]}; {self.BYPASS_IKLAN_GOOGLE()}; window_size=1280x551; user_agent={urllib.parse.quote(get_random_user_agent())}; language=en-US; languages=en-US; time_zone=Asia/Jakarta; cf-locale=en-US;',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+                'Cookie': f'{COOKIES["Cookie"]}; {self.BYPASS_IKLAN_GOOGLE()}; window_size=1280x551; user_agent=Mozilla%2F5.0%20(Windows%20NT%2010.0%3B%20Win64%3B%20x64)%20AppleWebKit%2F537.36%20(KHTML%2C%20like%20Gecko)%20Chrome%2F131.0.0.0%20Safari%2F537.36; language=en-US; languages=en-US; time_zone=Asia/Jakarta; cf-locale=en-US;',
                 'Sec-Fetch-Mode': 'cors',
                 'Sec-Fetch-Site': 'same-origin',
                 'Connection': 'keep-alive',
@@ -140,9 +119,8 @@ class DIPERLUKAN:
                 'Content-Type': f'multipart/form-data; boundary={boundary}',
                 'Accept': '*/*'
             })
-            proxies = get_random_proxy()
             data = MultipartEncoder({video_form: (None, video_url)}, boundary=boundary)
-            response = session.post(f'https://zefoy.com/{post_action}', data=data, proxies=proxies).text
+            response = session.post(f'https://zefoy.com/{post_action}', data=data).text
             self.base64_string = self.DECRYPTION_BASE64(response)
 
             if 'type="submit"' in str(self.base64_string):
@@ -157,16 +135,11 @@ class DIPERLUKAN:
                     time.sleep(3.5)
                     return False
                 self.next_post_action = re.search(r'action="(.*?)"', str(self.base64_string)).group(1)
-                
-                # Chờ 4 phút trước khi gửi POST tiếp theo
-                printf(f"[bold bright_white]   ──>[bold green] WAITING 4 MINUTES BEFORE NEXT REQUEST...          ", end='\r')
-                self.DELAY(4, 0)  # Chờ 4 phút (240 giây)
-
                 data = MultipartEncoder({
                     self.form_videoid: (None, self.videoid),
                     self.form_videolink: (None, self.videolink)
                 }, boundary=boundary)
-                response2 = session.post(f'https://zefoy.com/{self.next_post_action}', data=data, proxies=proxies).text
+                response2 = session.post(f'https://zefoy.com/{self.next_post_action}', data=data).text
                 self.base64_string2 = self.DECRYPTION_BASE64(response2)
 
                 if action_type == "views":
@@ -178,9 +151,6 @@ class DIPERLUKAN:
 [bold white]Views :[bold yellow] +1000""", width=56, style="bold bright_white", title="[bold bright_white][ Sukses ]"))
                         printf(f"[bold bright_white]   ──>[bold green] TRY SENDING VIEWS AGAIN!           ", end='\r')
                         time.sleep(2.5)
-                        # Chờ 1 phút trước khi gửi lần hoàn chỉnh tiếp theo
-                        printf(f"[bold bright_white]   ──>[bold green] WAITING 1 MINUTE BEFORE NEXT SEND...          ", end='\r')
-                        self.DELAY(1, 0)  # Chờ 1 phút (60 giây)
                         self.MENGIRIMKAN_TAMPILAN(video_form, post_action, video_url, action_type)
                     elif 'Successfully ' in str(self.base64_string2) and ' views sent.' in str(self.base64_string2):
                         self.views_sent = re.search(r'Successfully (.*?) views sent.', str(self.base64_string2)).group(1)
@@ -191,9 +161,6 @@ class DIPERLUKAN:
 [bold white]Views :[bold green] +{self.views_sent}""", width=56, style="bold bright_white", title="[bold bright_white][ Sukses ]"))
                         printf(f"[bold bright_white]   ──>[bold green] TRY SENDING VIEWS AGAIN!           ", end='\r')
                         time.sleep(2.5)
-                        # Chờ 1 phút trước khi gửi lần hoàn chỉnh tiếp theo
-                        printf(f"[bold bright_white]   ──>[bold green] WAITING 1 MINUTE BEFORE NEXT SEND...          ", end='\r')
-                        self.DELAY(1, 0)  # Chờ 1 phút (60 giây)
                         self.MENGIRIMKAN_TAMPILAN(video_form, post_action, video_url, action_type)
                     else:
                         with LOCK:
@@ -212,9 +179,6 @@ class DIPERLUKAN:
 [bold white]Hearts :[bold yellow] +10""", width=56, style="bold bright_white", title="[bold bright_white][ Sukses ]"))
                         printf(f"[bold bright_white]   ──>[bold green] TRY SENDING HEARTS AGAIN!           ", end='\r')
                         time.sleep(2.5)
-                        # Chờ 1 phút trước khi gửi lần hoàn chỉnh tiếp theo
-                        printf(f"[bold bright_white]   ──>[bold green] WAITING 1 MINUTE BEFORE NEXT SEND...          ", end='\r')
-                        self.DELAY(1, 0)  # Chờ 1 phút (60 giây)
                         self.MENGIRIMKAN_TAMPILAN(video_form, post_action, video_url, action_type)
                     else:
                         with LOCK:
@@ -272,13 +236,12 @@ class DIPERLUKAN:
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
                 'Host': 'zefoy.com',
                 'Sec-Fetch-Site': 'none',
-                'User-Agent': get_random_user_agent(),
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
                 'Sec-Fetch-Mode': 'navigate',
                 'Sec-Fetch-User': '?1',
                 'Sec-Fetch-Dest': 'document',
             })
-            proxies = get_random_proxy()
-            session.get('https://zefoy.com/', proxies=proxies)
+            session.get('https://zefoy.com/')
             return True
 
     def DECRYPTION_BASE64(self, base64_code):
@@ -301,14 +264,13 @@ class DIPERLUKAN:
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
                 'Host': 'zefoy.com',
                 'Sec-Fetch-Site': 'none',
-                'User-Agent': get_random_user_agent(),
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
                 'Sec-Fetch-Mode': 'navigate',
                 'Sec-Fetch-User': '?1',
                 'Sec-Fetch-Dest': 'document',
             })
-            proxies = get_random_proxy()
             params = {'domain': 'zefoy.com', 'callback': '_gfp_s_', 'client': 'ca-pub-3192305768699763'}
-            response = session.get('https://partner.googleadservices.com/gampad/cookie.js', params=params, proxies=proxies).text
+            response = session.get('https://partner.googleadservices.com/gampad/cookie.js', params=params).text
             if '_gfp_s_' in str(response):
                 self.json_cookies = json.loads(re.search(r'_gfp_s_\((.*?)\);', str(response)).group(1))
                 return f"_gads={self.json_cookies['_cookies_'][0]['_value_']}; __gpi={self.json_cookies['_cookies_'][1]['_value_']}"
@@ -325,6 +287,7 @@ class MAIN:
             if 'tiktok.com' in str(video_url) or '/video/' in str(video_url):
                 printf(Panel(f"[bold white]You can use[bold green] CTRL + C[bold white] if stuck...", width=56, style="bold bright_white", title="[bold bright_white][ Catatan ]"))
                 if option == "3":
+                    # Chạy song song bằng 2 luồng
                     views_thread = threading.Thread(target=self.run_action, args=(video_url, "views"))
                     hearts_thread = threading.Thread(target=self.run_action, args=(video_url, "hearts"))
                     views_thread.start()
